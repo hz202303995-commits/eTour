@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once "../includes/database.php";
 
 $error = "";
@@ -28,15 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['name']    = $user['name'];
             $_SESSION['role']    = $user['role'];
 
-            // Redirect based on role
             if ($user['role'] === 'guide') {
-                header("Location: ../guides/dashboard.php"); // or wherever guides should go
+                header("Location: ../guides/dashboard.php");
                 exit;
             } elseif ($user['role'] === 'tourist' || $user['role'] === 'user') {
-                header("Location: ../user/dashboard.php"); // or wherever tourists should go
+                header("Location: ../user/dashboard.php");
                 exit;
             } else {
-                // Fallback for any other role
                 header("Location: ../index.php");
                 exit;
             }
@@ -44,25 +43,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<link rel="stylesheet" href="../style.css">
-<h2>Login</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - eTOUR</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
 
-<?php if (!empty($error)): ?>
-<p style="color:red;"><?= $error ?></p>
-<?php endif; ?>
+<div class="container">
+    <h2>Login</h2>
 
-<form method="post">
+    <?php if (!empty($error)): ?>
+        <p class="error"><?php echo htmlspecialchars($error); ?></p>
+    <?php endif; ?>
 
-    <label>Email</label><br>
-    <input type="email" name="email" required><br>
+    <form method="post">
+        <label>Email</label><br>
+        <input type="email" name="email" required><br>
 
-    <label>Password</label><br>
-    <input type="password" name="password" required><br><br>
+        <label>Password</label><br>
+        <input type="password" name="password" required><br><br>
 
-    <button type="submit">Login</button>
+        <button type="submit">Login</button>
+    </form>
 
-</form>
-<p>
-    Don't have an account? <a href="register.php">Register here</a><br>
-    Forgot your password? <a href="forgot_password.php">Reset it here</a>
-</p>
+    <p>
+        Don't have an account? <a href="register.php">Register here</a><br>
+        Forgot your password? <a href="forgot_password.php">Reset it here</a>
+    </p>
+</div>
+
+</body>
+</html>

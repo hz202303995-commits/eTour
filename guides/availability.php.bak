@@ -1,0 +1,343 @@
+<?php
+session_start();
+require_once "../includes/database.php";
+
+// Access control: only guides
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'guide') {
+    header("Location: ../auth/login.php");
+    exit;
+}
+
+$userId = (int)$_SESSION['user_id'];
+
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+$csrf = $_SESSION['csrf_token'];
+
+/* ------------------------------------------
+   FETCH OR AUTO-CREATE GUIDE PROFILE
+-------------------------------------------*/
+$stmt = $pdo->prepare("SELECT id FROM guides WHERE user_id = ?");
+$stmt->execute([$userId]);
+$guide = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$guide) {
+    // Auto-create empty guide profile (NO logic change)
+    $pdo->prepare("
+        INSERT INTO guides (user_id, contact, location, languages, accommodation, rate_day, rate_hour)
+        VALUES (?, '', '', '', '', 0, 0)
+    ")->execute([$userId]);
+
+    $stmt->execute([$userId]);
+    $guide = $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+$guideId = (int)$guide['id'];  // FIXED missing variable
+
+$success = '';
+$error = '';
+
+/* ------------------------------
+   Helper: validate YYYY-MM-DD
+--------------------------------*/
+function is_valid_date($d) {
+    $dt = DateTime::createFromFormat('Y-m-d', $d);
+    return $dt && $dt->format('Y-m-d') === $d;
+}
+
+/* ------------------------------
+   DELETE AVAILABILITY (POST)
+--------------------------------*/
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
+    $deleteId = (int)$_POST['delete_id'];
+
+    $stmt = $pdo->prepare("DELETE FROM guide_availability WHERE id = ? AND guide_id = ?");
+    $stmt->execute([$deleteId, $guideId]);
+
+    header("Location: availability.php");
+    exit;
+}
+
+/* ------------------------------
+   ADD AVAILABILITY (?add=YYYY-MM-DD)
+--------------------------------*/
+if (isset($_GET['add'])) {
+    $addDate = $_GET['add'];
+
+    if (!is_valid_date($addDate)) {
+        $error = "Invalid date format.";
+    } else {
+        $today = date('Y-m-d');
+
+        if ($addDate < $today) {
+            $error = "Cannot add past dates.";
+        } else {
+            // Check booking conflicts
+            $checkBooking = $pdo->prepare("
+                SELECT id FROM bookings
+                WHERE guide_id = ?
+                  AND ? BETWEEN start_date AND end_date
+                  AND (status = 'pending' OR status = 'confirmed')
+                LIMIT 1
+            ");
+            $checkBooking->execute([$guideId, $addDate]);
+
+            if ($checkBooking->fetch()) {
+                $error = "This date already has a pending or confirmed booking.";
+            } else {
+                // Prevent duplicate availability
+                $stmt = $pdo->prepare("
+                    SELECT id FROM guide_availability 
+                    WHERE guide_id = ? AND available_date = ? LIMIT 1
+                ");
+                $stmt->execute([$guideId, $addDate]);
+
+                if ($stmt->fetch()) {
+                    $error = "This date is already added as available.";
+                } else {
+                    $ins = $pdo->prepare("
+                        INSERT INTO guide_availability (guide_id, available_date)
+                        VALUES (?, ?)
+                    ");
+                    $ins->execute([$guideId, $addDate]);
+
+                    // SET SUCCESS MESSAGE
+                    $formattedDate = date("F j, Y", strtotime($addDate));
+                    $success = "✓ Availability successfully added for $formattedDate";
+
+                    $year  = (int)date("Y", strtotime($addDate));
+                    $month = (int)date("n", strtotime($addDate));
+
+                    // Redirect with success parameter
+                    header("Location: availability.php?year=$year&month=$month&success=" . urlencode($success));
+                    exit;
+                }
+            }
+        }
+    }
+}
+
+/* ------------------------------
+   CHECK FOR SUCCESS MESSAGE FROM REDIRECT
+--------------------------------*/
+if (isset($_GET['success'])) {
+    $success = $_GET['success'];
+}
+
+/* ------------------------------
+   Determine Calendar Month/Year
+--------------------------------*/
+$year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
+$month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
+
+if ($month < 1)  $month = 1;
+if ($month > 12) $month = 12;
+
+/* ------------------------------
+   FETCH AVAILABILITY
+   (Optionally limit to relevant range for large datasets)
+--------------------------------*/
+$stmt = $pdo->prepare("SELECT id, available_date FROM guide_availability WHERE guide_id = ?");
+$stmt->execute([$guideId]);
+$availRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$available_map = [];
+foreach ($availRows as $r) {
+    $available_map[$r['available_date']] = $r['id'];
+}
+
+/* ------------------------------
+   FETCH CONFIRMED BOOKINGS
+--------------------------------*/
+$stmt = $pdo->prepare("
+    SELECT start_date, end_date 
+    FROM bookings 
+    WHERE guide_id = ? AND status = 'confirmed'
+");
+$stmt->execute([$guideId]);
+$confirmedBookingRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$confirmed_dates = [];
+foreach ($confirmedBookingRows as $b) {
+    $start = new DateTime($b['start_date']);
+    $end   = new DateTime($b['end_date']);
+    $endPlus = clone $end;
+    $endPlus->modify('+1 day');
+
+    foreach (new DatePeriod($start, new DateInterval('P1D'), $endPlus) as $d) {
+        $confirmed_dates[$d->format('Y-m-d')] = true;
+    }
+}
+
+/* ------------------------------
+   FETCH PENDING BOOKINGS
+--------------------------------*/
+$stmt = $pdo->prepare("
+    SELECT start_date, end_date 
+    FROM bookings 
+    WHERE guide_id = ? AND status = 'pending'
+");
+$stmt->execute([$guideId]);
+$pendingBookingRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$pending_dates = [];
+foreach ($pendingBookingRows as $b) {
+    $start = new DateTime($b['start_date']);
+    $end   = new DateTime($b['end_date']);
+    $endPlus = clone $end;
+    $endPlus->modify('+1 day');
+
+    foreach (new DatePeriod($start, new DateInterval('P1D'), $endPlus) as $d) {
+        $pending_dates[$d->format('Y-m-d')] = true;
+    }
+}
+
+/* ------------------------------
+   CALENDAR CALCULATION
+--------------------------------*/
+$first_day_of_month = mktime(0,0,0,$month,1,$year);
+$days_in_month       = (int)date('t', $first_day_of_month);
+$day_of_week         = (int)date('w', $first_day_of_month);
+
+$today = date('Y-m-d');
+
+$prevMonth = $month - 1;
+$prevYear  = $year;
+if ($prevMonth < 1) { $prevMonth = 12; $prevYear--; }
+
+$nextMonth = $month + 1;
+$nextYear  = $year;
+if ($nextMonth > 12) { $nextMonth = 1; $nextYear++; }
+
+function url_with_params($params = []) {
+    return basename($_SERVER['PHP_SELF']) . '?' . http_build_query($params);
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Guide Availability</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+.calendar td { height: 90px; vertical-align: top; padding: 6px; }
+.available { background: #dff0d8; }
+.scheduled { background: #f7d6d6; }
+.booked-pending { background: #fff3cd; }
+.past { background: #eee; color: #888; }
+.clickable { background: #f9f9f9; cursor:pointer; }
+.add-link { text-decoration:none; color:inherit; display:block; height:100%; }
+.delete-form button { background:#c33;color:#fff;border:0;padding:5px 8px;border-radius:4px; }
+.container {width: 100%;max-width: 1400px; margin: 30px auto;padding: 20px 40px;}
+.calendar { width: 100%; table-layout: fixed; }
+.nav-links a.active { font-weight: bold; }
+.notice { padding:10px; border-left:4px solid #2b7a78; background:#eafaf6; margin-bottom:12px; }
+.error { padding:10px; border-left:4px solid #c33; background:#fdecea; margin-bottom:12px; color:#611; }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+    <div class="logo">🌿 eTOUR | Guide Availability</div>
+    <div class="nav-links">
+        <a href="dashboard.php">Dashboard</a>
+        <a href="availability.php" class="active">Availability</a>
+        <a href="manage_bookings.php">Manage Bookings</a>
+        <a href="profile.php">Profile</a>
+        <a href="../auth/logout.php">Logout</a>
+    </div>
+</header>
+
+<div class="container">
+    <h2>📅 <?= htmlspecialchars(date("F Y", strtotime("$year-$month-01"))) ?></h2>
+
+    <!-- Messages -->
+    <?php if ($success): ?>
+        <div class="notice"><?= htmlspecialchars($success) ?></div>
+    <?php endif; ?>
+    <?php if ($error): ?>
+        <div class="error"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
+
+    <!-- Calendar Navigation -->
+    <div style="margin-bottom:12px;">
+        <a href="<?= url_with_params(['year'=>$prevYear,'month'=>$prevMonth]) ?>">&laquo; Prev</a>
+        &nbsp;&nbsp;
+        <a href="<?= url_with_params(['year'=>$nextYear,'month'=>$nextMonth]) ?>">Next &raquo;</a>
+    </div>
+
+    <table class="calendar" border="1" cellpadding="6">
+    <thead>
+    <tr>
+    <th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th>
+    <th>Thu</th><th>Fri</th><th>Sat</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    <?php
+    $week_day = 0;
+    echo "<tr>";
+
+    for ($i=0; $i < $day_of_week; $i++) {
+        echo "<td></td>";
+        $week_day++;
+    }
+
+    for ($day=1; $day <= $days_in_month; $day++) {
+
+        $dateStr = sprintf("%04d-%02d-%02d", $year, $month, $day);
+
+        // Build cell
+        $content = "<strong>$day</strong><br>";
+
+        if (isset($confirmed_dates[$dateStr])) {
+            echo "<td class='scheduled'>$content Confirmed</td>";
+        } elseif (isset($pending_dates[$dateStr])) {
+            echo "<td class='booked-pending'>$content Pending</td>";
+        } elseif (isset($available_map[$dateStr])) {
+            $id = $available_map[$dateStr];
+            echo "<td class='available'>$content Available
+                <form method='POST' class='delete-form' style='margin-top:8px;'>
+                    <input type='hidden' name='csrf_token' value='".htmlspecialchars($csrf, ENT_QUOTES)."' />
+                    <input type='hidden' name='delete_id' value='".htmlspecialchars($id, ENT_QUOTES)."' />
+                    <button type='submit' onclick=\"return confirm('Delete this availability?')\">Delete</button>
+                </form>
+            </td>";
+        } elseif ($dateStr < $today) {
+            echo "<td class='past'>$content</td>";
+        } else {
+            // Use a POST form to add availability (prevents GET-driven state changes)
+            echo "<td class='clickable'>            
+                    <form method='POST' style='margin:0;height:100%;'>
+                        <input type='hidden' name='csrf_token' value='".htmlspecialchars($csrf, ENT_QUOTES)."' />
+                        <input type='hidden' name='add_date' value='".htmlspecialchars($dateStr, ENT_QUOTES)."' />
+                        <input type='hidden' name='year' value='".htmlspecialchars($year, ENT_QUOTES)."' />
+                        <input type='hidden' name='month' value='".htmlspecialchars($month, ENT_QUOTES)."' />
+                        <button class='add-link' type='submit' style='width:100%;height:100%;border:0;background:transparent;text-align:left;padding:6px;'>$content Add</button>
+                    </form>
+                  </td>";
+        }
+
+        $week_day++;
+
+        if ($week_day == 7) {
+            echo "</tr><tr>";
+            $week_day = 0;
+        }
+    }
+
+    while ($week_day > 0 && $week_day < 7) {
+        echo "<td></td>";
+        $week_day++;
+    }
+    echo "</tr>";
+    ?>
+    </tbody>
+    </table>
+
+</div>
+</body>
+</html>

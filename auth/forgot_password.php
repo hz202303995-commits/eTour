@@ -1,34 +1,29 @@
-<?php
+﻿<?php
 session_start();
 require_once "../includes/database.php";
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $message = "";
 $error = "";
 $step = isset($_SESSION['reset_step']) ? $_SESSION['reset_step'] : 1;
 
-// Email sending function for password reset
 function sendPasswordResetCode($email, $name, $code) {
     $mail = new PHPMailer(true);
 
     try {
-        // SMTP SETTINGS
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
         $mail->Username   = 'queenhezekiah04@gmail.com';
-        $mail->Password   = 'xqie zwgg hqwr goik'; 
+        $mail->Password   = 'xqie zwgg hqwr goik';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
-        // SENDER / RECEIVER
         $mail->setFrom('queenhezekiah04@gmail.com', 'eTOUR Password Reset');
         $mail->addAddress($email, $name);
 
-        // Email content
         $mail->isHTML(true);
         $mail->Subject = "Your eTOUR Password Reset Code";
 
@@ -45,20 +40,19 @@ function sendPasswordResetCode($email, $name, $code) {
         return $mail->send();
 
     } catch (Exception $e) {
+        error_log('Password reset mail error: ' . $e->getMessage());
         return false;
     }
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Step 1: Send reset code to email
     if (isset($_POST['send_code'])) {
-        $email = trim($_POST['email']);
+        $email = trim($_POST['email'] ?? '');
 
         if (empty($email)) {
             $error = "Please enter your email.";
         } else {
-            // Check if user exists
             $stmt = $pdo->prepare("SELECT id, name FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
@@ -66,17 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$user) {
                 $error = "No account found with that email.";
             } else {
-                // Generate 6-digit code
                 $code = sprintf("%06d", mt_rand(100000, 999999));
-                
-                // Set expiry time (15 minutes from now)
                 $expiry = date('Y-m-d H:i:s', strtotime('+15 minutes'));
-
-                // Store code in DB with expiry
                 $upd = $pdo->prepare("UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?");
                 $upd->execute([$code, $expiry, $user['id']]);
 
-                // Send email
                 if (sendPasswordResetCode($email, $user['name'], $code)) {
                     $_SESSION['reset_step'] = 2;
                     $_SESSION['reset_email'] = $email;
@@ -84,47 +72,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $step = 2;
                     $message = "Reset code sent to your email.";
                 } else {
-                    $error = "Failed to send reset code.";
+                    $error = "Failed to send reset code. Check server logs for details.";
                 }
             }
         }
     }
 
-    // Resend code
     if (isset($_POST['resend_code'])) {
-        $email = $_SESSION['reset_email'];
-        
-        // Get user info
-        $stmt = $pdo->prepare("SELECT id, name FROM users WHERE email = ?");
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        if (empty($_SESSION['reset_email']) || empty($_SESSION['reset_user_id'])) {
+            $error = "No reset request found. Please start the reset process again.";
+        } else {
+            $email = $_SESSION['reset_email'];
+            $userId = $_SESSION['reset_user_id'];
+            $stmt = $pdo->prepare("SELECT id, name FROM users WHERE id = ?");
+            $stmt->execute([$userId]);
+            $user = $stmt->fetch();
 
-        if ($user) {
-            // Generate new 6-digit code
-            $code = sprintf("%06d", mt_rand(100000, 999999));
-            
-            // Set expiry time (15 minutes from now)
-            $expiry = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+            if ($user) {
+                $code = sprintf("%06d", mt_rand(100000, 999999));
+                $expiry = date('Y-m-d H:i:s', strtotime('+15 minutes'));
+                $upd = $pdo->prepare("UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?"); 
+                $upd->execute([$code, $expiry, $user['id']]);
 
-            // Store new code in DB with expiry
-            $upd = $pdo->prepare("UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?");
-            $upd->execute([$code, $expiry, $user['id']]);
-
-            // Send email
-            if (sendPasswordResetCode($email, $user['name'], $code)) {
-                $message = "New reset code sent to your email.";
+                if (sendPasswordResetCode($email, $user['name'], $code)) {
+                    $message = "New reset code sent to your email.";
+                } else {
+                    $error = "Failed to resend reset code. Please try again later.";
+                }
             } else {
-                $error = "Failed to resend reset code.";
+                $error = "User not found for this reset request.";
             }
         }
     }
 
-    // Step 2: Verify code and reset password
     if (isset($_POST['reset_password'])) {
-        $code = trim($_POST['code']);
-        $new_password = trim($_POST['new_password']);
-        $confirm_password = trim($_POST['confirm_password']);
-        $email = $_SESSION['reset_email'];
+        $code = trim($_POST['code'] ?? '');
+        $new_password = trim($_POST['new_password'] ?? '');
+        $confirm_password = trim($_POST['confirm_password'] ?? '');
+        $email = $_SESSION['reset_email'] ?? '';
 
         if (empty($code) || empty($new_password) || empty($confirm_password)) {
             $error = "Please fill in all fields.";
@@ -132,8 +117,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = "Passwords do not match.";
         } elseif (strlen($new_password) < 6) {
             $error = "Password must be at least 6 characters.";
+        } elseif (empty($email)) {
+            $error = "Reset session missing. Start the reset process again.";
         } else {
-            // Verify code and check expiry
             $stmt = $pdo->prepare("SELECT id, reset_token, reset_token_expiry FROM users WHERE email = ?");
             $stmt->execute([$email]);
             $user = $stmt->fetch();
@@ -145,16 +131,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif (strtotime($user['reset_token_expiry']) < time()) {
                 $error = "Reset code has expired. Please request a new code.";
             } else {
-                // Update password
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
                 $upd = $pdo->prepare("UPDATE users SET password = ?, reset_token = NULL, reset_token_expiry = NULL WHERE id = ?");
                 $upd->execute([$hashed_password, $user['id']]);
 
-                // Clear session
                 unset($_SESSION['reset_step']);
                 unset($_SESSION['reset_email']);
                 unset($_SESSION['reset_user_id']);
-                
+
                 $message = "Password reset successful! You can now login.";
                 $step = 3;
             }
@@ -164,24 +148,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 ?>
 
 <!DOCTYPE html>
-<link rel="stylesheet" href="../style.css">
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Forgot Password - eTour</title>
+    <link rel="stylesheet" href="../style.css">
 </head>
 <body>
 
 <h2>Forgot Password</h2>
 
 <?php if ($error): ?>
-    <p style="color:red;"><?= $error ?></p>
+    <p style="color:red;"><?= htmlspecialchars($error) ?></p>
 <?php endif; ?>
 <?php if ($message): ?>
-    <p style="color:green;"><?= $message ?></p>
+    <p style="color:green;"><?= htmlspecialchars($message) ?></p>
 <?php endif; ?>
 
 <?php if ($step == 1): ?>
-    <!-- Step 1: Enter email -->
     <form method="post">
         <label>Enter your email:</label><br>
         <input type="email" name="email" required><br><br>
@@ -189,8 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </form>
 
 <?php elseif ($step == 2): ?>
-    <!-- Step 2: Enter code and new password -->
-    <p>A 6-digit code has been sent to <?= htmlspecialchars($_SESSION['reset_email']) ?></p>
+    <p>A 6-digit code has been sent to <?= htmlspecialchars($_SESSION['reset_email'] ?? '') ?></p>
     <form method="post">
         <label>Enter Reset Code:</label><br>
         <input type="text" name="code" maxlength="6" required><br><br>
@@ -203,20 +186,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <button type="submit" name="reset_password">Reset Password</button>
     </form>
-    
+
     <br>
     <form method="post" style="display:inline;">
         <button type="submit" name="resend_code">Resend Code</button>
     </form>
 
 <?php elseif ($step == 3): ?>
-    <!-- Step 3: Success -->
     <p><a href="login.php">Click here to login</a></p>
 <?php endif; ?>
 
 <p>
     Remembered your password? <a href="login.php">Login here</a><br>
-    Don't have an account? <a href="register.php">Register here</a>     
+    Don't have an account? <a href="register.php">Register here</a>
 </p>
 
 </body>

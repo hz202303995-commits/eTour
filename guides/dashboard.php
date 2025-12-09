@@ -1,6 +1,5 @@
 <?php
 require_once "../includes/database.php";
-require_once "../includes/notification_bell.php"; 
 require_once "../includes/notification_helper.php";
 
 
@@ -147,12 +146,15 @@ function e($v) {
 <header class="navbar">
     <div class="logo">🌿 eTOUR | Dashboard</div>
     <div class="nav-links">
-        <a href="dashboard.php?show=notifications" class="notification-bell" title="Notifications">🔔
-            <?php if ($unreadCount > 0): ?>
-                <span class="notification-badge"><?php echo $unreadCount > 99 ? '99+' : e($unreadCount); ?></span>
-            <?php endif; ?>
-        </a>
-        <a href="dashboard.php">Dashboard</a>
+        <?php if ($role === 'guide' && !$isTourist): ?>
+            <a href="dashboard.php?show=notifications" class="notification-bell" title="Notifications">🔔
+                <?php if ($unreadCount > 0): ?>
+                    <span class="notification-badge"><?php echo $unreadCount > 99 ? '99+' : e($unreadCount); ?></span>
+                <?php endif; ?>
+            </a>
+        <?php endif; ?>
+        
+        <a href="dashboard.php" class="active-link">Dashboard</a>
 
         <?php if ($role === 'guide'): ?>
             <?php if (!$isTourist): ?>

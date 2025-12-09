@@ -120,7 +120,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="nav-links">
         <a href="dashboard.php">Dashboard</a>
         <a href="search.php">Search Guides</a>
-        <a href="bookings.php">My Bookings</a>
+        <a href="bookings.php" class="active-link">My Bookings</a>
         <a href="../auth/logout.php">Logout</a>
     </div>
 </header>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once "../includes/database.php";
+require_once "../includes/notification_helper.php";
 
 if (isset($_POST['return_to_guide'])) {
     $_SESSION['is_tourist_mode'] = false;
@@ -50,7 +51,7 @@ $featured_guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="logo">🌿 eTOUR | User Dashboard</div>
 
     <div class="nav-links">
-        <a href="dashboard.php">Dashboard</a>
+        <a href="dashboard.php" class="active-link">Dashboard</a>
         <a href="search.php">Search Guides</a>
         <a href="bookings.php">My Bookings</a>
         

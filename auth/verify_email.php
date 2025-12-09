@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 session_start();
 require_once "../includes/database.php";
 
@@ -12,43 +12,32 @@ if (!isset($_SESSION['pending_email'])) {
 $email = $_SESSION['pending_email'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $input_code = trim($_POST['code']);
+    $input_code = trim($_POST['code'] ?? '');
 
-    $stmt = $pdo->prepare("SELECT id, verification_code FROM users WHERE email = ?");
+    // fetch id, verification_code, role and name in one query
+    $stmt = $pdo->prepare("SELECT id, verification_code, role, name FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 
     if ($user && $user['verification_code'] == $input_code) {
-
-        $upd = $pdo->prepare("
-            UPDATE users SET is_verified = 1, verification_code = NULL
-            WHERE id = ?
-        ");
-        $upd->execute([$user['id']]);
-
-        // Mark email verified
-        $upd = $pdo->prepare("
-            UPDATE users SET is_verified = 1, verification_code = NULL
-            WHERE id = ?
-        ");
+        // single update only
+        $upd = $pdo->prepare("UPDATE users SET is_verified = 1, verification_code = NULL WHERE id = ?");
         $upd->execute([$user['id']]);
 
         // AUTO LOGIN user
         $_SESSION['user_id'] = $user['id'];
-        $_SESSION['role'] = $user_role = $pdo->query("SELECT role FROM users WHERE id = {$user['id']}")->fetchColumn();
-        $_SESSION['name'] = $pdo->query("SELECT name FROM users WHERE id = {$user['id']}")->fetchColumn();
+        $_SESSION['role'] = $user['role'];
+        $_SESSION['name'] = $user['name'];
 
         unset($_SESSION['pending_email']);
 
         // Redirect to correct dashboard
-        if ($user_role === 'guide') {
+        if ($user['role'] === 'guide') {
             header("Location: ../guides/dashboard.php");
         } else {
             header("Location: ../user/dashboard.php");
         }
         exit;
-
-
     } else {
         $errors[] = "Incorrect verification code.";
     }
