@@ -51,8 +51,17 @@ $available_dates = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $selected_rate = $_GET["rate_type"] ?? null;
 $error = null;
 
+// Ensure CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 // Handle booking confirmation
 if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "confirm_booking") {
+    $posted_csrf = $_POST['csrf_token'] ?? '';
+    if (!(isset($_SESSION['csrf_token']) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$posted_csrf))) {
+        $error = "Invalid request (CSRF).";
+    } else {
 
     $rate_type      = $_POST["rate_type"] ?? "";
     $selected_dates = $_POST["available_dates"] ?? [];
@@ -136,6 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "confi
     }
 
     $selected_rate = $rate_type;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -176,11 +186,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "confi
 
         <div class="confirmation-box">
             <h3>Guide Information</h3>
-            <p><strong>📍 Location:</strong> <?php echo htmlspecialchars($guide["location"]); ?></p>
-            <p><strong>🗣 Languages:</strong> <?php echo htmlspecialchars($guide["languages"]); ?></p>
-            <p><strong>🏡 Accommodation:</strong> <?php echo htmlspecialchars($guide["accommodation"]); ?></p>
-            <p><strong>💰 Day Rate:</strong> ₱<?php echo number_format($guide["rate_day"], 2); ?></p>
-            <p><strong>💰 Hourly Rate:</strong> ₱<?php echo number_format($guide["rate_hour"], 2); ?></p>
+            <p class="info-row"><span class="label">📍 Location:</span><span class="value"><?php echo htmlspecialchars($guide["location"]); ?></span></p>
+            <p class="info-row"><span class="label">🗣 Languages:</span><span class="value"><?php echo htmlspecialchars($guide["languages"]); ?></span></p>
+            <p class="info-row"><span class="label">🏡 Accommodation:</span><span class="value"><?php echo nl2br(htmlspecialchars($guide["accommodation"])); ?></span></p>
+            <p class="info-row"><span class="label">💰 Day Rate:</span><span class="value">₱<?php echo number_format($guide["rate_day"], 2); ?></span></p>
+            <p class="info-row"><span class="label">💰 Hourly Rate:</span><span class="value">₱<?php echo number_format($guide["rate_hour"], 2); ?></span></p>
         </div>
 
         <?php if (!$selected_rate): ?>
@@ -211,6 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "confi
                 <h3>Step 2: Confirm Booking</h3>
 
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                     <input type="hidden" name="action" value="confirm_booking">
                     <input type="hidden" name="guide_id" value="<?php echo $guide_id; ?>">
                     <input type="hidden" name="rate_type" value="<?php echo htmlspecialchars($selected_rate); ?>">
@@ -243,11 +254,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && ($_POST["action"] ?? "") === "confi
 
                     <?php if ($selected_rate === "hour"): ?>
                         <br>
-                        <label>Start Time:</label>
-                        <input type="time" name="start_time" required>
-
-                        <label>End Time:</label>
-                        <input type="time" name="end_time" required>
+                        <div class="time-row">
+                            <div class="time-col">
+                                <label for="start_time">Start Time:</label>
+                                <input id="start_time" type="time" name="start_time" required>
+                            </div>
+                            <div class="time-col">
+                                <label for="end_time">End Time:</label>
+                                <input id="end_time" type="time" name="end_time" required>
+                            </div>
+                        </div>
                     <?php endif; ?>
 
                     <button class="btn btn-confirm">✅ Confirm Booking</button>

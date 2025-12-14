@@ -1,92 +1,1234 @@
-﻿/* filepath: c:\xampp\htdocs\eTour\style.css
-   Cleaned eTOUR theme - CSS variables and consistent components
-   Replace and extend as needed
-*/
+﻿/* ===============================================
+   eTOUR - Professional Tour Guide Booking System
+   Modern, Clean, Professional Design
+   =============================================== */
 
-:root{
-  --brand-dark: #156124;
-  --brand-mid:  #2b7a78;
-  --brand-light:#84c7a5;
-  --bg-start:   #85a998;
-  --bg-end:     #84c7a5;
-  --success:    #28a745;
-  --warning:    #ffc107;
-  --danger:     #dc3545;
-  --muted:      #9e9e9e;
-  --card-bg:    #ffffff;
-  --text:       #1a1a1a;
-  --container-max: 1100px;
-  --radius: 12px;
-  --shadow-1: 0 4px 12px rgba(0,0,0,0.08);
+:root {
+  /* Modern Color Palette - Nature Inspired */
+  --primary: #2d7a3e;
+  --primary-dark: #1a5029;
+  --primary-light: #3a9450;
+  --primary-lighter: #e8f5e9;
+  
+  --accent: #4caf50;
+  --accent-light: #81c784;
+  
+  /* Status Colors */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+  --info: #2196f3;
+  
+  /* Neutral Colors */
+  --white: #ffffff;
+  --gray-50: #fafafa;
+  --gray-100: #f5f5f5;
+  --gray-200: #eeeeee;
+  --gray-300: #e0e0e0;
+  --gray-400: #bdbdbd;
+  --gray-500: #9e9e9e;
+  --gray-600: #757575;
+  --gray-700: #616161;
+  --gray-800: #424242;
+  --gray-900: #212121;
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.15);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
+  
+  /* Border Radius */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition: 0.3s ease;
+  --transition-slow: 0.5s ease;
 }
 
-/* Global */
-*{box-sizing:border-box;margin:0;padding:0}
-body{
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg,var(--bg-start),var(--bg-end));
-  min-height:100vh;color:var(--text);line-height:1.6;
+/* ===============================================
+   GLOBAL RESET & BASE STYLES
+   =============================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Navbar */
-.navbar{
-  background: linear-gradient(90deg,var(--brand-dark) 0%, #1f7a3d 100%);
-  padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;
-  box-shadow:var(--shadow-1);position:sticky;top:0;z-index:1000;
-}
-.logo{font-size:1.8rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:.5rem}
-.nav-links{display:flex;gap:1.25rem;align-items:center}
-.nav-links a{color:#fff;text-decoration:none;padding:.6rem 1rem;border-radius:8px;transition:all .25s;font-weight:500}
-.nav-links a:hover{background:rgba(255,255,255,.12);transform:translateY(-2px)}
-.nav-links a.active-link{background:var(--brand-mid);box-shadow:0 2px 8px rgba(0,0,0,.15)}
-
-/* Container */
-.container{max-width:var(--container-max);margin:2rem auto;padding:2rem;background:rgba(255,255,255,0.98);border-radius:var(--radius);box-shadow:var(--shadow-1)}
-
-/* Typography */
-h1,h2,h3,h4{color:var(--brand-dark);margin-bottom:1rem;font-weight:600}
-p{color:var(--text);margin-bottom:1rem;font-size:1rem}
-a{color:var(--brand-mid);text-decoration:none}
-a:hover{text-decoration:underline;color:var(--brand-dark)}
-
-/* Buttons */
-.btn,button[type="submit"],input[type="submit"]{
-  background: linear-gradient(135deg,var(--brand-mid),var(--brand-dark));
-  color:#fff;padding:.8rem 1.6rem;border:none;border-radius:10px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(43,122,120,.25);
-}
-.btn:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(43,122,120,.35)}
-
-/* Cards */
-.card{background:var(--card-bg);padding:1.5rem;border-radius:12px;box-shadow:var(--shadow-1);margin-bottom:1.25rem;border:1px solid #e8f5e9}
-
-/* Calendar (concise) */
-.calendar{width:100%;border-collapse:collapse;margin-top:1rem;background:var(--card-bg);border-radius:10px;overflow:hidden;box-shadow:var(--shadow-1)}
-.calendar th{background:linear-gradient(135deg,var(--brand-dark),#1f7a3d);color:#fff;padding:1rem;font-weight:600}
-.calendar td{height:100px;vertical-align:top;padding:.8rem;border:1px solid #e8e8e8;position:relative;color:var(--text);transition:all .2s}
-.calendar td:hover{background:#f1f8f4}
-.available{background:#d4edda !important;border-left:4px solid var(--success)}
-.scheduled{background:#f8d7da !important;border-left:4px solid var(--danger)}
-.booked-pending{background:#fff3cd !important;border-left:4px solid var(--warning)}
-.past{background:#f5f5f5 !important;color:var(--muted)}
-.clickable{cursor:pointer;background:#fafafa}
-.add-link{display:block;height:100%;width:100%;text-align:left;padding:.4rem;color:inherit}
-
-/* Notifications */
-.notice{padding:10px;border-left:4px solid var(--brand-mid);background:#eafaf6;margin-bottom:12px}
-.error{padding:10px;border-left:4px solid var(--danger);background:#fdecea;margin-bottom:12px;color:#611}
-
-/* Notification bell */
-.notification-bell{position:relative;display:inline-block;font-size:1.5rem;margin:0 1rem;cursor:pointer;transition:transform .12s}
-.notification-bell:hover{transform:scale(1.08)}
-.notification-badge{position:absolute;top:-6px;right:-8px;background:var(--danger);color:#fff;border-radius:50%;padding:.18rem .45rem;font-size:.72rem;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.18)}
-
-/* Responsive tweaks */
-@media (max-width:768px){
-  .nav-links{flex-direction:column;width:100%}
-  .container{margin:1rem;padding:1.25rem}
-  .calendar td{height:80px}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8f5e9 100%);
+  color: var(--gray-900);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Utility */
-.text-center{text-align:center}
-.mt-1{margin-top:.5rem}.mt-2{margin-top:1rem}
+/* ===============================================
+   NAVIGATION BAR - Modern & Clean
+   =============================================== */
+
+.navbar {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+  padding: 0;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.navbar-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--space-lg) var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  letter-spacing: -0.5px;
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.nav-links a,
+.nav-links button {
+  color: var(--white);
+  text-decoration: none;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  font-weight: 500;
+  font-size: 0.95rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-links a:hover,
+.nav-links button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.nav-links a.active-link {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Notification Bell - Fixed and Professional */
+.notification-bell {
+  position: relative;
+  font-size: 1.3rem;
+  cursor: pointer;
+  padding: var(--space-sm);
+  transition: var(--transition);
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-bell:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger);
+  color: var(--white);
+  border-radius: 50%;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ===============================================
+   CONTAINER & LAYOUT
+   =============================================== */
+
+.container {
+  max-width: 1200px;
+  margin: var(--space-2xl) auto;
+  padding: var(--space-2xl);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+  .container {
+    margin: var(--space-lg);
+    padding: var(--space-lg);
+  }
+}
+
+/* ===============================================
+   TYPOGRAPHY - Clean & Readable
+   =============================================== */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--gray-900);
+  font-weight: 600;
+  margin-bottom: var(--space-lg);
+  line-height: 1.3;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { 
+  font-size: 2rem; 
+  padding-bottom: var(--space-md);
+  border-bottom: 3px solid var(--primary);
+  margin-bottom: var(--space-xl);
+}
+h3 { 
+  font-size: 1.5rem; 
+  color: var(--primary);
+}
+h4 { font-size: 1.25rem; }
+
+p {
+  margin-bottom: var(--space-md);
+  color: var(--gray-700);
+  line-height: 1.7;
+}
+
+/* ===============================================
+   BUTTONS - Modern & Professional
+   =============================================== */
+
+.btn,
+button[type="submit"],
+input[type="submit"] {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: var(--white);
+  padding: var(--space-md) var(--space-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  display: inline-block;
+  text-decoration: none;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: var(--transition-slow);
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+.btn:hover,
+button[type="submit"]:hover,
+input[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Button Variants */
+.btn-confirm {
+  background: linear-gradient(135deg, var(--success), #388e3c);
+}
+
+.btn-decline,
+.btn-cancel {
+  background: linear-gradient(135deg, var(--danger), #d32f2f);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, var(--gray-600), var(--gray-700));
+}
+
+.small-btn {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.875rem;
+}
+
+.small-pill {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  background: #e7f4ea;
+  color: #2e7d32;
+  border: 1px solid #cfe8d4;
+}
+
+/* ===============================================
+   FORMS - Clean & Modern
+   =============================================== */
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+  width: 100%;
+  padding: var(--space-md);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: var(--transition);
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  background: var(--white);
+  font-family: inherit;
+}
+
+/* Auth box - centered form container for login/register pages */
+.auth-box {
+  max-width: 420px;
+  width: 100%;
+  margin: 2.5rem auto;
+  padding: 1.5rem 1.75rem;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--gray-200);
+}
+
+.auth-box h2 {
+  text-align: center;
+  color: var(--primary-dark);
+  margin-bottom: var(--space-md);
+}
+
+.auth-box label { display:block; margin-bottom:0.35rem; color:var(--gray-700); }
+.auth-box form { display:block; }
+.auth-box p { margin-top: var(--space-md); }
+
+/* Error message utility */
+.error {
+  color: var(--danger);
+  background: #fdecea;
+  border-left: 4px solid var(--danger);
+  padding: 0.65rem 0.9rem;
+  margin-bottom: var(--space-md);
+  border-radius: 6px;
+}
+
+.success {
+  color: var(--success);
+  background: #e9f9ee;
+  border-left: 4px solid var(--primary);
+  padding: 0.65rem 0.9rem;
+  margin-bottom: var(--space-md);
+  border-radius: 6px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(45, 122, 62, 0.1);
+}
+
+label {
+  font-weight: 600;
+  color: var(--gray-800);
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: 0.95rem;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.inline {
+  display: inline-block;
+  margin-right: var(--space-md);
+}
+
+/* Time inputs side-by-side for hourly bookings */
+.time-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.time-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.time-col label { display:block; margin-bottom:0.25rem; }
+
+/* Accommodation preview 'See more' styles */
+.accommodation-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3; /* Show 3 lines */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: calc(1.5rem * 3); /* for visual consistency */
+  word-break: break-word;
+}
+.see-more {
+  color: var(--gray-600);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 6px;
+  cursor: default;
+  font-size: 0.9rem;
+  vertical-align: baseline;
+}
+
+/* User bookings grid: 4 columns desktop, responsive down to single column */
+.bookings-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.bookings-grid .card { margin-bottom: 0; }
+
+@media (max-width: 1100px) {
+  .bookings-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 800px) {
+  .bookings-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 420px) {
+  .bookings-grid { grid-template-columns: 1fr; }
+}
+
+/* Responsive: collapse labels into block on small screens so labels don't cramp */
+@media (max-width: 600px) {
+  .guide-card strong { display: block; width: auto; margin-bottom: 0.35rem; }
+  .guide-card p { display: block; }
+}
+
+@media (max-width: 600px) {
+  .info-row { flex-direction: column; align-items: flex-start; }
+  .info-row .label { min-width: 0; }
+}
+
+/* Info row: label/value pairs used across guide cards and details */
+.info-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0.25rem 0;
+}
+.info-row .label {
+  min-width: 110px;
+  color: var(--gray-900);
+  font-weight: 700;
+  display: inline-block;
+}
+.info-row .value {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Ensure content in value doesn't overflow */
+.info-row .value p, .info-row .value span { margin: 0; }
+
+
+
+/* ===============================================
+   CARDS - Professional & Clean
+   =============================================== */
+
+/* Status pills inside calendar cells */
+.status {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.status-confirmed {
+  background: #fcebea; /* very light red */
+  color: var(--danger);
+  border: 1px solid rgba(244,67,54,0.08);
+}
+.status-pending {
+  background: #fff7ec; /* very light amber */
+  color: var(--warning);
+  border: 1px solid rgba(255,152,0,0.07);
+}
+.status-available {
+  background: #f1f8f2; /* very light green */
+  color: var(--success);
+  border: 1px solid rgba(76,175,80,0.07);
+}
+
+/* remove full-cell background; keep subtle shading for past dates */
+.scheduled, .booked-pending, .available {
+  background: none !important;
+  border-left: none !important;
+}
+  border-color: var(--primary-light);
+}
+
+/* duplicate hover rule removed */
+
+.guide-card h3,
+.guide-card h4 {
+  color: var(--primary);
+  margin-bottom: var(--space-md);
+}
+
+/* Confirmation box center and smaller width for dialogs */
+.confirmation-box { max-width: 720px; margin: 2rem auto; padding: 1.25rem; }
+
+.guide-card p {
+  margin-bottom: var(--space-md);
+}
+
+.guide-card strong {
+  color: var(--gray-900);
+  font-weight: 700;
+}
+
+/* ===============================================
+   GRID LAYOUTS
+   =============================================== */
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: var(--space-xl);
+  margin-top: var(--space-xl);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-lg);
+  margin: var(--space-xl) 0;
+}
+
+.kpi-card {
+  background: linear-gradient(135deg, var(--white) 0%, var(--gray-50) 100%);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  border: 2px solid var(--gray-200);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+  min-height: 110px;
+}
+
+.kpi-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-4px);
+}
+
+.kpi-card h3 {
+  font-size: clamp(1.2rem, 3.0vw, 2.2rem);
+  color: var(--primary);
+  margin-bottom: var(--space-sm);
+  font-weight: 700;
+  line-height: 1.05;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal; /* allow wrapping */
+  overflow-wrap: anywhere; /* break long numbers to fit */
+  word-break: break-word;
+}
+
+/* Smaller, less dominant style for monetary (revenue) KPI */
+/* Smaller, less dominant style for monetary (revenue) KPI */
+.kpi-card.kpi-revenue h3 {
+  font-size: clamp(1.0rem, 2.4vw, 2rem);
+  color: var(--gray-900);
+}
+.kpi-card.kpi-revenue h3::before {
+  content: "";
+}
+.kpi-card.kpi-revenue h3 .currency { font-size: .65em; margin-right: .25rem; vertical-align: middle; }
+.kpi-card h3 span.currency { font-size: .85em; margin-right: .25rem; }
+
+.kpi-card h3 .kpi-number {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Ensure numbers scale smaller than the h3 parent when needed */
+.kpi-card h3 .kpi-number {
+  font-size: clamp(0.95rem, 3.5vw, 1.8rem);
+  line-height: 1.05;
+}
+
+/* Revenue should be noticeably smaller if needed */
+.kpi-card.kpi-revenue h3 .kpi-number {
+  font-size: clamp(0.85rem, 2.6vw, 1.4rem);
+}
+
+/* Allow numbers to break generously inside small boxes */
+.kpi-card .kpi-number { word-break: break-word; overflow-wrap: break-word; }
+
+.kpi-card p {
+  font-size: 1rem;
+  color: var(--gray-600);
+  margin: 0;
+  font-weight: 500;
+}
+
+/* ===============================================
+   TABLES - Professional Design
+   =============================================== */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-xl) 0;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+thead {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: var(--white);
+}
+
+th {
+  padding: var(--space-lg);
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+td {
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--gray-200);
+  color: var(--gray-800);
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr {
+  transition: var(--transition-fast);
+}
+
+tbody tr:hover {
+  background: rgba(0,0,0,0.03);
+}
+
+/* Make table headers visually distinct and prevent hover coloring */
+table thead th {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: var(--white);
+  border-bottom: 3px solid rgba(0,0,0,0.08);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* Ensure header cells don't pick up row hover */
+thead tr:hover, thead th:hover {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+}
+
+/* Zebra striping for better readability */
+tbody tr:nth-child(odd) td { background: var(--white); }
+tbody tr:nth-child(even) td { background: var(--gray-100); }
+
+/* ===============================================
+   CALENDAR - Modern Design
+   =============================================== */
+
+.calendar {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-xl);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  table-layout: fixed;
+}
+
+.calendar th {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: var(--white);
+  padding: var(--space-lg);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+.calendar td {
+  min-height: 96px;
+  vertical-align: top;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--gray-200);
+  position: relative;
+  transition: var(--transition);
+  background: var(--white);
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.calendar td:hover {
+  background: var(--gray-50);
+  border-color: var(--primary-light);
+}
+
+.calendar td strong {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-block;
+  font-size: 0.95rem;
+  color: var(--gray-700);
+  font-weight: 700;
+}
+
+.calendar td .status { display: inline-block; margin-top: 0.5rem; }
+
+.available {
+  background: #e8f5e9 !important;
+  border-left: 4px solid var(--success);
+}
+
+.scheduled {
+  background: #ffebee !important;
+  border-left: 4px solid var(--danger);
+}
+
+.booked-pending {
+  background: #fff3e0 !important;
+  border-left: 4px solid var(--warning);
+}
+
+.past {
+  background: var(--gray-100) !important;
+  color: var(--gray-400);
+  opacity: 0.6;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.add-form,
+.delete-form {
+  margin-top: var(--space-sm);
+}
+
+.add-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  width: auto;
+  text-align: left;
+  font-weight: 600;
+}
+
+.add-link:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
+/* Make buttons inside the calendar smaller to avoid cramped layout */
+.calendar .btn,
+.calendar .btn-decline,
+.calendar .btn-cancel,
+.calendar .btn-secondary {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+/* ===============================================
+   STATUS BADGES - Modern Design
+   =============================================== */
+
+.status {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  box-shadow: var(--shadow-sm);
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-confirmed,
+.status-approved {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-cancelled,
+.status-declined {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* ===============================================
+   NOTIFICATIONS - Fixed Dropdown
+   =============================================== */
+
+.notice,
+.success-notification,
+.info-message,
+.info,
+.success,
+.message,
+.alert {
+  padding: var(--space-lg);
+  border-left: 4px solid var(--primary);
+  background: var(--primary-lighter);
+  margin-bottom: var(--space-lg);
+  border-radius: var(--radius-md);
+  color: var(--gray-900);
+  box-shadow: var(--shadow-sm);
+  animation: slideIn 0.3s ease;
+}
+
+/* Ensure message elements are visible and not hidden by layout */
+.info,
+.success,
+.message,
+.notice,
+.error,
+.error-notification,
+.success-notification,
+.info-message {
+  display: block;
+  position: relative;
+  z-index: 10;
+}
+
+.error,
+.error-notification {
+  padding: var(--space-lg);
+  border-left: 4px solid var(--danger);
+  background: #ffebee;
+  margin-bottom: var(--space-lg);
+  border-radius: var(--radius-md);
+  color: #c62828;
+  box-shadow: var(--shadow-sm);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Notification Dropdown - FIXED */
+.notification-dropdown {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background: var(--white);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  min-width: 360px;
+  max-width: 420px;
+  box-shadow: var(--shadow-xl);
+  margin-top: var(--space-sm);
+  max-height: 500px;
+  overflow-y: auto;
+  z-index: 9999;
+  animation: dropdownSlide 0.3s ease;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notification-item {
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--gray-200);
+  transition: var(--transition);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background: #e3f2fd;
+  border-left: 3px solid var(--info);
+}
+
+.notification-item:hover {
+  background: var(--gray-50);
+  transform: translateX(4px);
+}
+
+.notification-item strong {
+  display: block;
+  color: var(--primary);
+  margin-bottom: var(--space-xs);
+  font-size: 0.95rem;
+}
+
+.notification-item p {
+  margin: var(--space-sm) 0;
+  color: var(--gray-700);
+  font-size: 0.9rem;
+}
+
+.notification-item small {
+  color: var(--gray-500);
+  font-size: 0.8rem;
+}
+
+/* ===============================================
+   DATE SELECTION
+   =============================================== */
+
+.date-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+}
+
+.date-checkbox-item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-lg);
+  background: var(--gray-50);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.date-checkbox-item:hover {
+  background: var(--primary-lighter);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.date-checkbox-item input[type="checkbox"] {
+  margin-right: var(--space-md);
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.date-checkbox-item label {
+  cursor: pointer;
+  margin: 0;
+  font-weight: 500;
+  color: var(--gray-800);
+}
+
+/* ===============================================
+   SEARCH BAR
+   =============================================== */
+
+.search-bar {
+  margin: var(--space-xl) 0;
+  text-align: center;
+}
+
+.search-bar input {
+  width: 60%;
+  max-width: 600px;
+  padding: var(--space-lg);
+  border: 2px solid var(--gray-300);
+  border-radius: 50px;
+  font-size: 1rem;
+  margin-right: var(--space-md);
+  transition: var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.search-bar input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(45, 122, 62, 0.1);
+}
+
+.search-bar button {
+  padding: var(--space-lg) var(--space-2xl);
+  border-radius: 50px;
+}
+
+/* ===============================================
+   HERO SECTION
+   =============================================== */
+
+.hero {
+  height: 70vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(45, 122, 62, 0.95), rgba(26, 80, 41, 0.95)),
+              url('../image/tour.jpg') no-repeat center center / cover;
+  color: var(--white);
+  margin-bottom: var(--space-2xl);
+}
+
+.hero-content {
+  background: rgba(255, 255, 255, 0.98);
+  padding: var(--space-2xl);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 700px;
+}
+
+.hero-content h1 {
+  color: var(--primary-dark);
+  font-size: 2.5rem;
+  margin-bottom: var(--space-lg);
+}
+
+.hero-content p {
+  color: var(--gray-800);
+  font-size: 1.2rem;
+  margin-bottom: var(--space-xl);
+}
+
+/* ===============================================
+   REPORT SECTION
+   =============================================== */
+
+.report-section {
+  margin: var(--space-2xl) 0;
+  padding: var(--space-xl);
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--gray-200);
+}
+
+.report-section h3 {
+  margin-bottom: var(--space-lg);
+}
+
+.print-btn {
+  background: linear-gradient(135deg, var(--info), #1976d2);
+  margin-right: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* ===============================================
+   FOOTER
+   =============================================== */
+
+footer {
+  text-align: center;
+  padding: var(--space-2xl);
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  color: var(--white);
+  margin-top: var(--space-2xl);
+}
+footer p, footer a {
+  color: var(--white);
+}
+
+/* ===============================================
+   UTILITY CLASSES
+   =============================================== */
+
+.text-center { text-align: center; }
+.mt-1 { margin-top: var(--space-sm); }
+.mt-2 { margin-top: var(--space-md); }
+.mb-1 { margin-bottom: var(--space-sm); }
+.mb-2 { margin-bottom: var(--space-md); }
+.no-dates { 
+  text-align: center; 
+  padding: var(--space-2xl); 
+  color: var(--gray-600); 
+  font-style: italic;
+}
+.no-guides { 
+  text-align: center; 
+  padding: var(--space-2xl); 
+  color: var(--gray-600); 
+  font-style: italic;
+}
+.section-title { 
+  color: var(--gray-900); 
+  font-size: 2rem; 
+  margin-bottom: var(--space-xl);
+}
+
+/* ===============================================
+   RESPONSIVE DESIGN
+   =============================================== */
+
+@media (max-width: 768px) {
+  .navbar-inner {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .container {
+    margin: var(--space-lg);
+    padding: var(--space-lg);
+  }
+  
+  .guide-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .calendar td {
+    height: 80px;
+    font-size: 0.85rem;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    margin-bottom: var(--space-md);
+  }
+  
+  table {
+    font-size: 0.85rem;
+  }
+  
+  th, td {
+    padding: var(--space-md);
+  }
+  
+  .notification-dropdown {
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+  }
+  
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.75rem; }
+}
+
+@media print {
+  .navbar,
+  .btn,
+  button,
+  .nav-links,
+  .notification-bell {
+    display: none !important;
+  }
+  
+  .container {
+    box-shadow: none;
+    margin: 0;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}

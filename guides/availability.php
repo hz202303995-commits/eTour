@@ -45,6 +45,49 @@ function is_valid_date($d) {
 }
 
 // Handle POST actions (add/delete)
+// GET-based confirmation for deleting availability
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['delete_id'])) {
+    $deleteId = (int)$_GET['delete_id'];
+
+    // validate ownership
+    $stmtChk = $pdo->prepare("SELECT id, available_date FROM guide_availability WHERE id = ? AND guide_id = ?");
+    $stmtChk->execute([$deleteId, $guideId]);
+    $rowChk = $stmtChk->fetch(PDO::FETCH_ASSOC);
+    if (!$rowChk) {
+        header("Location: availability.php");
+        exit;
+    }
+
+    $dateFormatted = htmlspecialchars(date('F j, Y', strtotime($rowChk['available_date'])));
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Confirm Delete Availability</title>
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body>
+    <div class="container">
+        <div class="confirmation-box" style="max-width: 720px; margin: 2rem auto;">
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete availability on <?= $dateFormatted ?>?</p>
+            <form method="POST" action="availability.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES) ?>">
+                <input type="hidden" name="delete_id" value="<?= (int)$deleteId ?>">
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    <button type="submit" class="btn btn-decline">Delete</button>
+                    <a href="availability.php" class="btn btn-cancel">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $posted_csrf = $_POST['csrf_token'] ?? '';
     if (!hash_equals((string)$_SESSION['csrf_token'], (string)$posted_csrf)) {
@@ -73,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         SELECT id FROM bookings
                         WHERE guide_id = ?
                           AND ? BETWEEN start_date AND end_date
-                          AND (status = 'pending' OR status = 'confirmed')
+                          AND (status = 'pending' OR status = 'approved')
                         LIMIT 1
                     ");
                     $checkBooking->execute([$guideId, $addDate]);
@@ -135,7 +178,7 @@ foreach ($availRows as $r) {
 }
 
 // Fetch confirmed bookings
-$stmt = $pdo->prepare("SELECT start_date, end_date FROM bookings WHERE guide_id = ? AND status = 'confirmed'");
+$stmt = $pdo->prepare("SELECT start_date, end_date FROM bookings WHERE guide_id = ? AND status = 'approved'");
 $stmt->execute([$guideId]);
 $confirmedBookingRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -204,7 +247,7 @@ function url_with_params($params = []) {
 <body>
 
 <header class="navbar">
-    <div class="logo">eTOUR | Guide Availability</div>
+    <div class="logo">🌿 eTOUR | Guide Availability</div>
     <div class="nav-links">
         <a href="dashboard.php">Dashboard</a>
         <a href="availability.php" class="active-link">Availability</a>
@@ -258,18 +301,12 @@ function url_with_params($params = []) {
                 $content = "<strong>$day</strong><br>";
 
                 if (isset($confirmed_dates[$dateStr])) {
-                    echo "<td class='scheduled'>$content Confirmed</td>";
+                    echo "<td class='scheduled'>$content <span class='status status-confirmed'>Confirmed</span></td>";
                 } elseif (isset($pending_dates[$dateStr])) {
-                    echo "<td class='booked-pending'>$content Pending</td>";
+                    echo "<td class='booked-pending'>$content <span class='status status-pending'>Pending</span></td>";
                 } elseif (isset($available_map[$dateStr])) {
                     $id = $available_map[$dateStr];
-                    echo "<td class='available'>$content Available
-                        <form method='POST' class='delete-form'>
-                            <input type='hidden' name='csrf_token' value='" . htmlspecialchars($csrf, ENT_QUOTES) . "'>
-                            <input type='hidden' name='delete_id' value='" . htmlspecialchars($id, ENT_QUOTES) . "'>
-                            <button type='submit' onclick=\"return confirm('Delete this availability?')\">Delete</button>
-                        </form>
-                    </td>";
+                    echo "<td class='available'>$content <span class='status status-available'>Available</span> <br><a href='availability.php?action=delete&delete_id=" . htmlspecialchars($id, ENT_QUOTES) . "' class='btn btn-decline'>Delete</a></td>";
                 } elseif ($dateStr < $today) {
                     echo "<td class='past'>$content</td>";
                 } else {

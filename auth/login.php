@@ -2,9 +2,18 @@
 session_start();
 require_once "../includes/database.php";
 
+// Ensure CSRF token exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $csrf_token)) {
+        $error = "Invalid request. Please try again.";
+    } else {
 
     $email    = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -42,6 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -54,13 +64,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
 
 <div class="container">
-    <h2>Login</h2>
+    <div class="auth-box">
+        <h2>Login</h2>
 
     <?php if (!empty($error)): ?>
         <p class="error"><?php echo htmlspecialchars($error); ?></p>
     <?php endif; ?>
 
     <form method="post">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
         <label>Email</label><br>
         <input type="email" name="email" required><br>
 
@@ -68,12 +80,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <input type="password" name="password" required><br><br>
 
         <button type="submit">Login</button>
-    </form>
+        </form>
 
-    <p>
+        <p>
         Don't have an account? <a href="register.php">Register here</a><br>
         Forgot your password? <a href="forgot_password.php">Reset it here</a>
     </p>
+    </div>
 </div>
 
 </body>

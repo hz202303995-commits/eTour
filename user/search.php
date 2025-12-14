@@ -118,13 +118,20 @@ $guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                 <h3><?= htmlspecialchars($g['guide_name']); ?></h3>
 
-                <p>📍 <strong>Location:</strong> <?= htmlspecialchars($g['location']); ?></p>
-                <p>🗣 <strong>Languages:</strong> <?= htmlspecialchars($g['languages']); ?></p>
-                <p>🏨 <strong>Accommodation:</strong> <?= nl2br(htmlspecialchars($g['accommodation'])); ?></p>
-                <p>
-                    💰 <strong>Day Rate:</strong> ₱<?= number_format($g['rate_day'], 2); ?><br>
-                    💰 <strong>Hour Rate:</strong> ₱<?= number_format($g['rate_hour'], 2); ?>
-                </p>
+                <p class="info-row"><span class="label">📍 Location:</span><span class="value"><?= htmlspecialchars($g['location']); ?></span></p>
+                <p class="info-row"><span class="label">🗣 Languages:</span><span class="value"><?= htmlspecialchars($g['languages']); ?></span></p>
+                <?php
+                $accom = trim($g['accommodation'] ?? '');
+                $maxChars = 120;
+                if (mb_strlen($accom) > $maxChars):
+                    $preview = htmlspecialchars(mb_substr($accom, 0, $maxChars));
+                ?>
+                <p class="accommodation-preview" title="<?= htmlspecialchars($accom) ?>"><strong>🏨 Accommodation:</strong> <?= htmlspecialchars($preview) ?> <span class="see-more" aria-hidden="true">&hellip;</span></p>
+                <?php else: ?>
+                <p class="accommodation-preview"><strong>🏨 Accommodation:</strong> <?= nl2br(htmlspecialchars($accom)); ?></p>
+                <?php endif; ?>
+                <p class="info-row"><span class="label">💰 Day Rate:</span><span class="value">₱<?= number_format($g['rate_day'], 2); ?></span></p>
+                <p class="info-row"><span class="label">💰 Hour Rate:</span><span class="value">₱<?= number_format($g['rate_hour'], 2); ?></span></p>
 
                 <form method="GET" action="book_guide.php">
                     <input type="hidden" name="guide_id" value="<?= (int)$g['guide_id']; ?>">

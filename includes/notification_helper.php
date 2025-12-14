@@ -40,22 +40,36 @@ if (!function_exists('e')) {
 }
 
 if (!function_exists('getUnreadNotificationCount')) {
-    function getUnreadNotificationCount(PDO $pdo, int $userId): int {
-        $stmt = $pdo->prepare("SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0");
-        $stmt->execute([$userId]);
+    function getUnreadNotificationCount(PDO $pdo, int $userId, string $userRole = null, string $type = null): int {
+        $sql = "SELECT COUNT(*) AS c FROM notifications WHERE user_id = ? AND is_read = 0";
+        $params = [$userId];
+        if ($userRole) {
+            $sql .= " AND user_role = ?";
+            $params[] = $userRole;
+        }
+        if ($type) {
+            $sql .= " AND type = ?";
+            $params[] = $type;
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return (int)($row['c'] ?? 0);
     }
 }
 
 if (!function_exists('getNotifications')) {
-    function getNotifications(PDO $pdo, int $userId, string $userRole = null, int $limit = 50): array {
+    function getNotifications(PDO $pdo, int $userId, string $userRole = null, string $type = null, int $limit = 50): array {
         $sql = "SELECT id, type, message, is_read, created_at FROM notifications WHERE user_id = ?";
         $params = [$userId];
         
         if ($userRole) {
             $sql .= " AND user_role = ?";
             $params[] = $userRole;
+        }
+        if ($type) {
+            $sql .= " AND type = ?";
+            $params[] = $type;
         }
         $sql .= " ORDER BY created_at DESC LIMIT " . (int)$limit;
         

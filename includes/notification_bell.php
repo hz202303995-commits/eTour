@@ -25,6 +25,11 @@ if ($userId) {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     $unread = (int)($row['c'] ?? 0);
     
+    // Ensure a CSRF token exists for any POST forms we render
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+    }
+
     // Check if user wants to see notifications
     $showNotifications = isset($_GET['show_notifications']);
     
@@ -47,14 +52,19 @@ $showNotifications = isset($_GET['show_notifications']);
     <?php if ($showNotifications): ?>
     <div style="position:absolute; right:0; background:white; border:1px solid #ccc; padding:10px; min-width:250px; box-shadow:0 2px 8px rgba(0,0,0,0.1); z-index:1000; margin-top:5px;">
         <div style="margin-bottom:10px;">
-            <a href="mark_all_read.php" style="font-size:12px;">Mark all as read</a>
+            <form method="POST" action="/mark_all_notification_read.php" style="display:inline; margin:0; padding:0;">
+                <input type="hidden" name="csrf_token" value="<?= e($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" style="background:none;border:none;padding:0;margin:0;color:#007bff;font-size:12px;cursor:pointer;">Mark all as read</button>
+            </form>
             <a href="<?= $currentPage ?>" style="font-size:12px; float:right;">Close</a>
         </div>
         <?php if (count($notifications) > 0): ?>
             <?php foreach ($notifications as $notif): ?>
                 <div style="padding:8px; border-bottom:1px solid #eee; <?= $notif['is_read'] ? '' : 'background:#f0f8ff;' ?>">
-                    <div><?= e($notif['message']) ?></div>
-                    <small style="color:#666;"><?= e($notif['created_at']) ?></small>
+                    <a href="/notification_redirect.php?id=<?= (int)$notif['id'] ?>" style="text-decoration:none;color:inherit;display:block;">
+                        <div><?= e($notif['message']) ?></div>
+                        <small style="color:#666;"><?= e($notif['created_at']) ?></small>
+                    </a>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>

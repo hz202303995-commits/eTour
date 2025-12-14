@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once "../includes/database.php";
 
 $error = "";
@@ -22,7 +23,16 @@ if (!$user) {
 
 $user_id = $user['id'];
 
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $csrf_token)) {
+        $error = "Invalid request. Please try again.";
+    } else {
 
     $new_password = $_POST['password'] ?? '';
     $confirm = $_POST['confirm'] ?? '';
@@ -45,20 +55,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $message = "Password successfully reset. <a href='login.php'>Login here</a>";
     }
+    }
 }
 ?>
-<link rel="stylesheet" href="../assets/styles.css">
-<h2>Reset Password</h2>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reset Password - eTOUR</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="auth-box">
+        <h2>Reset Password</h2>
 
 <?php if ($error): ?>
-<p style="color:red;"><?= $error ?></p>
+<p class="error"><?= htmlspecialchars($error) ?></p>
 <?php endif; ?>
 
 <?php if ($message): ?>
-<p style="color:green;"><?= $message ?></p>
+<p class="success"><?= $message ?></p>
 <?php else: ?>
 
 <form method="post">
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
     <label>New Password:</label><br>
     <input type="password" name="password" required><br>
 
@@ -69,7 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </form>
 
 <?php endif; ?>
-<p>
+    <p>
     Remembered your password? <a href="login.php">Login here</a><br>
     Don't have an account? <a href="register.php">Register here</a>
-</p>
+
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

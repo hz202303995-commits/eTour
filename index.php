@@ -95,15 +95,26 @@ $featured = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <div class="guide-card">
                         <h3><?= htmlspecialchars($g['guide_name']); ?></h3>
 
-                        <p><strong>📍 Location:</strong> <?= htmlspecialchars($g['location']); ?></p>
-                        <p><strong>🗣️ Languages:</strong> <?= htmlspecialchars($g['languages']); ?></p>
+                        <p class="info-row"><span class="label">📍 Location:</span><span class="value"><?= htmlspecialchars($g['location']); ?></span></p>
+                        <p class="info-row"><span class="label">🗣️Languages:</span><span class="value"><?= htmlspecialchars($g['languages']); ?></span></p>
+                        <p class="info-row"><span class="label">💰 Day Rate:</span><span class="value">₱<?= number_format($g['rate_day'], 2); ?>/day</span></p>
+                        <p class="info-row"><span class="label">💰 Hourly Rate:</span><span class="value">₱<?= number_format($g['rate_hour'], 2); ?>/hour</span></p>
 
-                        <p><strong>💰 Day Rate:</strong> ₱<?= number_format($g['rate_day'], 2); ?>/day</p>
-                        <p><strong>💰 Hourly Rate:</strong> ₱<?= number_format($g['rate_hour'], 2); ?>/hour</p>
-
-                        <p><strong>🏡 Accommodation:</strong><br>
-                            <?= nl2br(htmlspecialchars($g['accommodation'])); ?>
+                        <?php
+                        $accom = trim($g['accommodation'] ?? '');
+                        $accomEsc = htmlspecialchars($accom);
+                        $maxChars = 120;
+                        if (mb_strlen($accom) > $maxChars):
+                            $preview = htmlspecialchars(mb_substr($accom, 0, $maxChars));
+                        ?>
+                        <p class="accommodation-preview" title="<?= $accomEsc ?>"><strong>🏡 Accommodation:</strong><br>
+                            <?= htmlspecialchars($preview) ?> <span class="see-more" aria-hidden="true">&hellip;</span>
                         </p>
+                        <?php else: ?>
+                        <p class="accommodation-preview" title="<?= $accomEsc ?>"><strong>🏡 Accommodation:</strong><br>
+                            <?= nl2br($accomEsc) ?>
+                        </p>
+                        <?php endif; ?>
 
                         <form method="GET" action="user/book_guide.php">
                             <input type="hidden" name="guide_id" value="<?= (int)$g['guide_id']; ?>">

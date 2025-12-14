@@ -3,6 +3,11 @@ session_start();
 require_once "../includes/database.php";
 require_once "../includes/notification_helper.php"; // Add this line at the top
 
+// Ensure a CSRF token exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 /* =====================================================
    ACCESS CHECK — only guides & not in tourist mode
    ===================================================== */
@@ -17,6 +22,11 @@ if (
 
 $userId = (int)$_SESSION["user_id"];
 $guideName = $_SESSION["name"] ?? "";
+
+// Ensure CSRF token exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
 
 /* =====================================================
    GET GUIDE ID
@@ -35,7 +45,64 @@ $message = "";
 /* =====================================================
    HANDLE BOOKING ACTIONS (POST)
    ===================================================== */
+
+// GET confirmation pages for action links
+if ($_SERVER["REQUEST_METHOD"] === "GET" && isset($_GET["action"], $_GET["booking_id"]) && !isset($_GET['confirm'])) {
+    $action = $_GET['action'];
+    $bookingId = (int)$_GET['booking_id'];
+
+    // Retrieve booking to validate ownership
+    $stmt = $pdo->prepare("SELECT b.*, u.id AS tourist_id, u.name AS tourist_name FROM bookings b JOIN users u ON b.user_id = u.id WHERE b.id = ? AND b.guide_id = ? LIMIT 1");
+    $stmt->execute([$bookingId, $guideId]);
+    $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$booking) {
+        header("Location: manage_bookings.php");
+        exit;
+    }
+
+    $actionLabel = ucfirst(htmlspecialchars($action));
+    $startDate = htmlspecialchars($booking['start_date']);
+    $touristName = htmlspecialchars($booking['tourist_name']);
+
+    ?>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Confirm "<?= htmlspecialchars($actionLabel) ?>" - eTOUR</title>
+        <link rel="stylesheet" href="../style.css">
+    </head>
+    <body>
+        <div class="container">
+            <?php if (!empty($_GET['success'])): ?>
+                <div class="success-notification" style="margin-bottom:10px;">✅ Booking declined and availability restored.</div>
+            <?php endif; ?>
+            <h2>Confirm <?= htmlspecialchars($actionLabel) ?></h2>
+            <p>Are you sure you want to <?= htmlspecialchars(strtolower($actionLabel)) ?> the booking by <?= $touristName ?> for <?= $startDate ?>?</p>
+            <form method="POST" action="manage_bookings.php">
+                <input type="hidden" name="booking_id" value="<?= (int)$bookingId ?>">
+                <input type="hidden" name="action" value="<?= htmlspecialchars($action) ?>">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <button type="submit" class="btn btn-confirm"><?= $actionLabel ?></button>
+                <a href="manage_bookings.php" class="btn btn-cancel" style="margin-left:10px;">Cancel</a>
+            </form>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
+// POST handler for actions
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"], $_POST["booking_id"])) {
+    // CSRF validation
+    $posted_csrf = $_POST['csrf_token'] ?? '';
+    if (!(isset($_SESSION['csrf_token']) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$posted_csrf))) {
+        // invalid csrf - redirect back
+        header('Location: manage_bookings.php');
+        exit;
+    }
 
     $action = $_POST["action"];
     $bookingId = (int)$_POST["booking_id"];
@@ -63,7 +130,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"], $_POST["boo
        CONFIRM BOOKING
        ========================================== */
     if ($action === "confirm") {
-        $pdo->prepare("UPDATE bookings SET status = 'confirmed' WHERE id = ? AND guide_id = ?")
+        $pdo->prepare("UPDATE bookings SET status = 'approved' WHERE id = ? AND guide_id = ?")
             ->execute([$bookingId, $guideId]);
 
         // CREATE NOTIFICATION using helper function
@@ -87,9 +154,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"], $_POST["boo
             $end   = (new DateTime($booking['end_date']))->modify('+1 day');
             $period = new DatePeriod($start, new DateInterval("P1D"), $end);
 
-            $insert = $pdo->prepare("INSERT IGNORE INTO guide_availability (guide_id, available_date) VALUES (?, ?)");
+            $checkAvail = $pdo->prepare("SELECT id FROM guide_availability WHERE guide_id = ? AND available_date = ? LIMIT 1");
+            $insAvail = $pdo->prepare("INSERT INTO guide_availability (guide_id, available_date) VALUES (?, ?)");
+            $checkBookingOnDate = $pdo->prepare("SELECT id FROM bookings WHERE guide_id = ? AND ? BETWEEN start_date AND end_date AND (status = 'pending' OR status = 'approved') LIMIT 1");
             foreach ($period as $d) {
-                $insert->execute([$guideId, $d->format("Y-m-d")]);
+                $date_str = $d->format("Y-m-d");
+                $checkAvail->execute([$guideId, $date_str]);
+                // If a pending/approved booking exists on the date, skip restoring availability
+                $checkBookingOnDate->execute([$guideId, $date_str]);
+                if (!$checkAvail->fetch() && !$checkBookingOnDate->fetch()) {
+                    $insAvail->execute([$guideId, $date_str]);
+                }
             }
 
             // CREATE NOTIFICATION using helper function
@@ -97,6 +172,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"], $_POST["boo
             createNotification($pdo, $touristId, 'user', 'booking_declined', $msg);
 
             $pdo->commit();
+            // Redirect with success flag so guide can see availability restored
+            header("Location: manage_bookings.php?success=1");
+            exit;
         } catch (Exception $e) {
             $pdo->rollBack();
         }
@@ -114,6 +192,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"], $_POST["boo
         createNotification($pdo, $touristId, 'user', 'booking_cancelled', $msg);
     }
 
+    // Generic redirect if no earlier redirect
     header("Location: manage_bookings.php");
     exit;
 }
@@ -142,22 +221,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <title>Manage Bookings - eTOUR</title>
 <link rel="stylesheet" href="../style.css">
 
-<style>
-    .container { max-width:1100px; margin:30px auto; padding:0 15px; }
-    table { width:100%; border-collapse:collapse; margin-top:15px; }
-    th,td { padding:10px; border:1px solid #ddd; }
-    th { background:#f7f7f7; }
-    .btn { padding:7px 12px; border-radius:5px; border:0; cursor:pointer; }
-    .btn-confirm { background:#28a745; color:#fff; }
-    .btn-decline { background:#dc3545; color:#fff; }
-    .btn-cancel { background:#f0ad4e; color:#fff; }
-    .status { padding:4px 8px; border-radius:4px; font-weight:600; }
-    .status-pending { background:#fff3cd; color:#856404; }
-    .status-confirmed { background:#d1ecf1; color:#0c5460; }
-    .status-declined { background:#f8d7da; color:#721c24; }
-    .status-cancelled { background:#f5c6cb; color:#721c24; }
-    form.inline { display:inline; }
-</style>
+
 </head>
 
 <body>
@@ -223,25 +287,12 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td>
                         <?php if ($status === "pending"): ?>
 
-                            <form method="POST" class="inline" onsubmit="return confirm('Confirm this booking?');">
-                                <input type="hidden" name="booking_id" value="<?= (int)$b['id'] ?>">
-                                <input type="hidden" name="action" value="confirm">
-                                <button class="btn btn-confirm">Confirm</button>
-                            </form>
+                            <a href="manage_bookings.php?action=confirm&booking_id=<?= (int)$b['id'] ?>" class="btn btn-confirm">Confirm</a>
+                            <a href="manage_bookings.php?action=decline&booking_id=<?= (int)$b['id'] ?>" class="btn btn-decline">Decline</a>
 
-                            <form method="POST" class="inline" onsubmit="return confirm('Decline this booking?');">
-                                <input type="hidden" name="booking_id" value="<?= (int)$b['id'] ?>">
-                                <input type="hidden" name="action" value="decline">
-                                <button class="btn btn-decline">Decline</button>
-                            </form>
+                        <?php elseif ($status === "approved"): ?>
 
-                        <?php elseif ($status === "confirmed"): ?>
-
-                            <form method="POST" class="inline" onsubmit="return confirm('Cancel this booking?');">
-                                <input type="hidden" name="booking_id" value="<?= (int)$b['id'] ?>">
-                                <input type="hidden" name="action" value="cancel">
-                                <button class="btn btn-cancel">Cancel</button>
-                            </form>
+                            <a href="manage_bookings.php?action=cancel&booking_id=<?= (int)$b['id'] ?>" class="btn btn-cancel">Cancel</a>
 
                         <?php else: ?>
                             <em>No actions</em>

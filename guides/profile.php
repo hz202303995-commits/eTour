@@ -17,10 +17,20 @@ if (
 $userId = (int)$_SESSION["user_id"];
 $message = "";
 
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 /* =======================================================
    HANDLE PROFILE UPDATE
    ======================================================= */
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["update_profile"])) {
+    $posted_csrf = $_POST['csrf_token'] ?? '';
+    if (!(isset($_SESSION['csrf_token']) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$posted_csrf))) {
+        header("Location: profile.php");
+        exit;
+    }
 
     $contact       = trim($_POST["contact"]);
     $location      = trim($_POST["location"]);
@@ -105,36 +115,37 @@ $user = $userStmt->fetch(PDO::FETCH_ASSOC);
     <?php endif; ?>
 
     <form method="POST">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
 
-        <label>Name:</label>
+        <label><strong>Name:</strong></label>
         <input type="text" value="<?= htmlspecialchars($user["name"] ?? "") ?>" disabled>
 
-        <label>Email:</label>
+        <label><strong>Email:</strong></label>
         <input type="email" value="<?= htmlspecialchars($user["email"] ?? "") ?>" disabled>
 
-        <label>Contact:</label>
+        <label><strong>Contact:</strong></label>
         <input type="text" name="contact" required
                value="<?= htmlspecialchars($guide["contact"] ?? "") ?>"
                placeholder="Enter your contact number">
 
-        <label>Location:</label>
+        <label><strong>Location:</strong></label>
         <input type="text" name="location" required
                value="<?= htmlspecialchars($guide["location"] ?? "") ?>"
                placeholder="Enter your location">
 
-        <label>Languages:</label>
+        <label><strong>Languages:</strong></label>
         <input type="text" name="languages" required
                value="<?= htmlspecialchars($guide["languages"] ?? "") ?>"
                placeholder="e.g., English, Filipino">
 
-        <label>Accommodation:</label>
+        <label><strong>Accommodation:</strong></label>
         <textarea name="accommodation" required><?= htmlspecialchars($guide["accommodation"] ?? "") ?></textarea>
 
-        <label>Rate per Day:</label>
+        <label><strong>Rate per Day:</strong></label>
         <input type="number" step="0.01" name="rate_day" required
                value="<?= htmlspecialchars($guide["rate_day"] ?? "") ?>">
 
-        <label>Rate per Hour:</label>
+        <label><strong>Rate per Hour:</strong></label>
         <input type="number" step="0.01" name="rate_hour" required
                value="<?= htmlspecialchars($guide["rate_hour"] ?? "") ?>">
 

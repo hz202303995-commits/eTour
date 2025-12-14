@@ -3,7 +3,17 @@ session_start();
 require_once "../includes/database.php";
 require_once "../includes/notification_helper.php";
 
+// Ensure CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 if (isset($_POST['return_to_guide'])) {
+    $posted_csrf = $_POST['csrf_token'] ?? '';
+    if (!(isset($_SESSION['csrf_token']) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$posted_csrf))) {
+        header("Location: dashboard.php");
+        exit;
+    }
     $_SESSION['is_tourist_mode'] = false;
     header("Location: ../guides/dashboard.php");
     exit;
@@ -57,6 +67,7 @@ $featured_guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         <?php if ($_SESSION['role'] === 'guide' && !empty($_SESSION['is_tourist_mode'])): ?>
             <form method="POST" style="display:inline; margin: 0;">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <button type="submit" name="return_to_guide" style="margin: 0;">Switch to Guide Mode</button>
             </form>
         <?php endif; ?>
@@ -101,21 +112,27 @@ $featured_guides = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     <h4><?= htmlspecialchars($guide['guide_name']); ?></h4>
 
-                    <p><strong>📍 Location:</strong> 
-                        <?= htmlspecialchars($guide['location']); ?></p>
+                    <p class="info-row"><span class="label">📍 Location:</span><span class="value"><?= htmlspecialchars($guide['location']); ?></span></p>
+                    <p class="info-row"><span class="label">🗣 Languages:</span><span class="value"><?= htmlspecialchars($guide['languages']); ?></span></p>
+                    <p class="info-row"><span class="label">💰 Day Rate:</span><span class="value">₱<?= number_format($guide['rate_day'], 2); ?></span></p>
+                    <p class="info-row"><span class="label">💰 Hourly Rate:</span><span class="value">₱<?= number_format($guide['rate_hour'], 2); ?></span></p>
 
-                    <p><strong>🗣 Languages:</strong> 
-                        <?= htmlspecialchars($guide['languages']); ?></p>
-
-                    <p><strong>💰 Day Rate:</strong> 
-                        ₱<?= number_format($guide['rate_day'], 2); ?></p>
-
-                    <p><strong>💰 Hourly Rate:</strong> 
-                        ₱<?= number_format($guide['rate_hour'], 2); ?></p>
-
-                    <p><strong>🏨 Accommodation:</strong><br>
-                        <?= nl2br(htmlspecialchars($guide['accommodation'])); ?>
+                    <?php
+                    $accom = trim($guide['accommodation'] ?? '');
+                    $accomEsc = htmlspecialchars($accom);
+                    $maxChars = 120;
+                    if (mb_strlen($accom) > $maxChars):
+                        $preview = htmlspecialchars(mb_substr($accom, 0, $maxChars));
+                        $guideUrl = "book_guide.php?guide_id=" . (int)$guide['guide_id'];
+                    ?>
+                    <p class="accommodation-preview" title="<?= $accomEsc ?>"><strong>🏨 Accommodation:</strong>
+                        <?= htmlspecialchars($preview) ?> <span class="see-more" aria-hidden="true">&hellip;</span>
                     </p>
+                    <?php else: ?>
+                    <p class="accommodation-preview" title="<?= $accomEsc ?>"><strong>🏨 Accommodation:</strong><br>
+                        <?= nl2br(htmlspecialchars($accom)); ?>
+                    </p>
+                    <?php endif; ?>
 
                     <form method="GET" action="book_guide.php">
                         <input type="hidden" name="guide_id" 

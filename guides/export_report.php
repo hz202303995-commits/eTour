@@ -84,7 +84,7 @@ fputcsv($output, [
 foreach ($bookings as $b) {
     $revenue = 0;
 
-    if ($b["status"] === "confirmed") {
+    if ($b["status"] === "approved") {
         if ($b["rate_type"] === "day") {
             $revenue = $b["rate_day"] * $b["days"];
         } else {

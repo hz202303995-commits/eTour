@@ -3,9 +3,18 @@ session_start();
 require_once "../includes/database.php";
 require_once "../includes/email_config.php";
 
+// Ensure CSRF token exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+}
+
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $csrf_token)) {
+        $errors[] = "Invalid request. Please try again.";
+    } else {
 
     $name     = trim($_POST['name'] ?? '');
     $email    = trim($_POST['email'] ?? '');
@@ -41,18 +50,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+}
 ?>
 
-<link rel="stylesheet" href="../style.css">
-<h2>Register</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register - eTOUR</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
 
-<?php if (!empty($errors)): ?>
-    <?php foreach ($errors as $e): ?>
-        <p style="color:red;"><?= $e ?></p>
-    <?php endforeach; ?>
-<?php endif; ?>
+<div class="container">
+    <div class="auth-box">
+        <h2>Register</h2>
 
-<form method="post">
+        <?php if (!empty($errors)): ?>
+            <?php foreach ($errors as $e): ?>
+                <p class="error"><?= htmlspecialchars($e) ?></p>
+            <?php endforeach; ?>
+        <?php endif; ?>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 
     <label>Name</label><br>
     <input type="text" name="name" required><br>
@@ -71,8 +93,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <br><br>
 
     <button type="submit">Register</button>
-</form>
-<p>
+    </form>
+    <p>
     Already have an account? <a href="login.php">Login here</a><br>
     Forgot your password? <a href="forgot_password.php">Reset it here</a>
-</p>
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

@@ -18,6 +18,14 @@ if (!isset($_SESSION['user_id'])) {
 
 $notificationId = isset($_POST['notification_id']) ? (int)$_POST['notification_id'] : 0;
 
+// CSRF validation
+$posted_csrf = $_POST['csrf_token'] ?? '';
+if (!(isset($_SESSION['csrf_token']) && hash_equals((string)($_SESSION['csrf_token'] ?? ''), (string)$posted_csrf))) {
+    $ref = $_SERVER['HTTP_REFERER'] ?? 'user/dashboard.php';
+    header("Location: $ref");
+    exit;
+}
+
 if ($notificationId > 0) {
 
     $userId   = $_SESSION['user_id'];

@@ -1,53 +1,26 @@
 ﻿<?php
 session_start();
 require_once "../includes/database.php";
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../includes/email_config.php';
 
 $message = "";
 $error = "";
 $step = isset($_SESSION['reset_step']) ? $_SESSION['reset_step'] : 1;
 
-function sendPasswordResetCode($email, $name, $code) {
-    $mail = new PHPMailer(true);
+// Password reset email handled by includes/email_config.php sendPasswordResetCode()
 
-    try {
-        $mail->isSMTP();
-        $mail->Host       = 'smtp.gmail.com';
-        $mail->SMTPAuth   = true;
-        $mail->Username   = 'queenhezekiah04@gmail.com';
-        $mail->Password   = 'xqie zwgg hqwr goik';
-        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port       = 587;
-
-        $mail->setFrom('queenhezekiah04@gmail.com', 'eTOUR Password Reset');
-        $mail->addAddress($email, $name);
-
-        $mail->isHTML(true);
-        $mail->Subject = "Your eTOUR Password Reset Code";
-
-        $mail->Body = "
-            <h2>Password Reset Code</h2>
-            <p>Hello <strong>$name</strong>,</p>
-            <p>Your password reset code is:</p>
-            <h1 style='color:#2b7a78; letter-spacing:5px;'>$code</h1>
-            <p>Enter this code to reset your password.</p>
-            <p><strong>This code will expire in 15 minutes.</strong></p>
-            <p>If you didn't request this, please ignore this email.</p>
-        ";
-
-        return $mail->send();
-
-    } catch (Exception $e) {
-        error_log('Password reset mail error: ' . $e->getMessage());
-        return false;
-    }
+// Ensure csrf token exists
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    if (isset($_POST['send_code'])) {
+    // Validate CSRF token for all POST actions
+    $csrf_token = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $csrf_token)) {
+        $error = "Invalid request. Please try again.";
+    } else if (isset($_POST['send_code'])) {
         $email = trim($_POST['email'] ?? '');
 
         if (empty($email)) {
@@ -76,9 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-    }
-
-    if (isset($_POST['resend_code'])) {
+    } else if (isset($_POST['resend_code'])) {
         if (empty($_SESSION['reset_email']) || empty($_SESSION['reset_user_id'])) {
             $error = "No reset request found. Please start the reset process again.";
         } else {
@@ -103,9 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "User not found for this reset request.";
             }
         }
-    }
-
-    if (isset($_POST['reset_password'])) {
+    } else if (isset($_POST['reset_password'])) {
         $code = trim($_POST['code'] ?? '');
         $new_password = trim($_POST['new_password'] ?? '');
         $confirm_password = trim($_POST['confirm_password'] ?? '');
@@ -156,19 +125,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 
-<h2>Forgot Password</h2>
+    <div class="container">
+        <div class="auth-box">
+            <h2>Forgot Password</h2>
 
 <?php if ($error): ?>
-    <p style="color:red;"><?= htmlspecialchars($error) ?></p>
+    <p class="error"><?= htmlspecialchars($error) ?></p>
 <?php endif; ?>
 <?php if ($message): ?>
-    <p style="color:green;"><?= htmlspecialchars($message) ?></p>
+    <p class="success"><?= htmlspecialchars($message) ?></p>
 <?php endif; ?>
 
 <?php if ($step == 1): ?>
     <form method="post">
         <label>Enter your email:</label><br>
         <input type="email" name="email" required><br><br>
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
         <button type="submit" name="send_code">Send Reset Code</button>
     </form>
 
@@ -184,11 +156,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>Confirm Password:</label><br>
         <input type="password" name="confirm_password" required><br><br>
 
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
         <button type="submit" name="reset_password">Reset Password</button>
     </form>
 
     <br>
     <form method="post" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
         <button type="submit" name="resend_code">Resend Code</button>
     </form>
 
@@ -196,10 +170,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p><a href="login.php">Click here to login</a></p>
 <?php endif; ?>
 
-<p>
-    Remembered your password? <a href="login.php">Login here</a><br>
-    Don't have an account? <a href="register.php">Register here</a>
-</p>
+            <p>
+                Remembered your password? <a href="login.php">Login here</a><br>
+                Don't have an account? <a href="register.php">Register here</a>
+            </p>
+        </div>
+    </div>
 
 </body>
 </html>
